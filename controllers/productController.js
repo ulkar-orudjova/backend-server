@@ -1,6 +1,27 @@
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 const Product = require("../models/product");
 const jwt = require("jsonwebtoken");
+
+// Cloudinary konfiqurasiyası
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Cloudinary storage - Vercel serverless üçün uyğun
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "fonder-products", // Cloudinary-də qovluq adı
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+    transformation: [{ width: 800, height: 800, crop: "limit" }], // Şəkil ölçüsü optimallaşdırılması
+  },
+});
+
+const upload = multer({ storage: storage }).single("productImage");
 
 const isAdmin = (token) => {
   try {
@@ -15,17 +36,6 @@ const isAdmin = (token) => {
     return false;
   }
 };
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads");
-  },
-  filename: function (req, file, cb) {
-    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
-  },
-});
-
-const upload = multer({ storage: storage }).single("productImage");
 
 const getProducts = async (req, res) => {
   try {
@@ -56,7 +66,10 @@ const addProduct = async (req, res) => {
   }
 
   upload(req, res, async (err) => {
-    if (err) return res.status(400).send({ message: err.message });
+    if (err) {
+      console.log("Multer/Cloudinary xətası:", err);
+      return res.status(400).send({ message: err.message });
+    }
 
     const { name, details, price } = req.body;
 
@@ -65,12 +78,14 @@ const addProduct = async (req, res) => {
         name,
         details,
         price,
+        // Cloudinary URL-i birbaşa qaytarır (req.file.path)
         productImage: req.file ? req.file.path : null,
       });
 
       await newProduct.save();
       res.send(newProduct);
     } catch (error) {
+      console.log("addProduct xətası:", error);
       res.status(500).send("Xəta: addProduct" + error.message);
     }
   });
@@ -85,7 +100,10 @@ const updateProduct = async (req, res) => {
   }
 
   upload(req, res, async (err) => {
-    if (err) return res.status(400).send({ message: err.message });
+    if (err) {
+      console.log("Multer/Cloudinary xətası:", err);
+      return res.status(400).send({ message: err.message });
+    }
 
     try {
       const { name, details, price } = req.body;
@@ -97,12 +115,25 @@ const updateProduct = async (req, res) => {
       product.price = price || product.price;
 
       if (req.file) {
+        // Köhnə şəkili Cloudinary-dən silmək (isteğə bağlı)
+        if (product.productImage) {
+          try {
+            // URL-dən public_id çıxarmaq
+            const urlParts = product.productImage.split('/');
+            const publicIdWithExt = urlParts.slice(-2).join('/'); // folder/filename
+            const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ""); // extension silmək
+            await cloudinary.uploader.destroy(publicId);
+          } catch (deleteErr) {
+            console.log("Köhnə şəkil silinmədi:", deleteErr.message);
+          }
+        }
         product.productImage = req.file.path;
       }
 
       await product.save();
       res.send(product);
     } catch (error) {
+      console.log("updateProduct xətası:", error);
       res.status(500).send("Xəta: updateProduct" + error.message);
     }
   });
@@ -120,11 +151,26 @@ const deleteProduct = async (req, res) => {
     return res.status(403).send("Sizin bu əməliyyat üçün icazəniz yoxdur");
   }
   try {
-    const result = await Product.findByIdAndDelete(req.params.id);
-    console.log("DELETE Product - Result:", result ? "Success" : "Product not found");
-    if (!result) {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
       return res.status(404).send("Məhsul tapılmadı");
     }
+
+    // Cloudinary-dən şəkili silmək
+    if (product.productImage) {
+      try {
+        const urlParts = product.productImage.split('/');
+        const publicIdWithExt = urlParts.slice(-2).join('/');
+        const publicId = publicIdWithExt.replace(/\.[^/.]+$/, "");
+        await cloudinary.uploader.destroy(publicId);
+        console.log("Cloudinary şəkil silindi:", publicId);
+      } catch (deleteErr) {
+        console.log("Cloudinary şəkil silinmədi:", deleteErr.message);
+      }
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+    console.log("DELETE Product - Success");
     res.send({ message: "Məhsul uğurla silindi" });
   } catch (error) {
     console.log("DELETE Product - Error:", error.message);
