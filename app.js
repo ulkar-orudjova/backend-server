@@ -21,16 +21,27 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
-const allowedOrigins = ["https://fonder-cvn6.vercel.app"];
+// İcazə verilən bütün URL-ləri bura əlavə edin
+const allowedOrigins = [
+  "https://fonder-cvn6.vercel.app",
+  "https://fonder-admin-omega.vercel.app" // Yeni frontend URL-i bura mütləq əlavə edilməlidir
+];
+
 app.use(cors({
   origin: function (origin, callback) {
+    // 1. origin yoxdursa (məsələn: server-to-server və ya curl)
+    // 2. Localhost-dursa
+    // 3. Siyahımızdakı URL-lərdən biridirsə
     if (!origin || origin.startsWith("http://localhost") || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("Bloklanan Origin:", origin); // Hansı URL-in bloklandığını görmək üçün
       callback(new Error("CORS icazəsi yoxdur!"));
     }
   },
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(bodyParser.json());
