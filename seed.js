@@ -35,7 +35,7 @@ mongoose
 //     details:
 //       "We dive through every part of your customer journey — from first impression to post-purchase — to gauge your brand perception and uncover opportunities to convert more customers, build brand loyalty, and drive lasting growth.",
 //     price: 2.0,
-//     productImage: "uploads/brand-audit-img.png",
+//     productImage: "uploads/brand-audit-img.webp",
 //   },
 //   {
 //     id: "2",
@@ -43,7 +43,7 @@ mongoose
 //     details:
 //       "Everything you need to launch with impact and grow with confidence: smart strategy, a uniquely memorable identity, award-worthy design, and digital guidelines that keep your brand consistent, adaptable, and ready for whatever’s next.",
 //     price: 25.0,
-//     productImage: "uploads/brand-build.png",
+//     productImage: "uploads/brand-build.webp",
 //   },
 //   {
 //     id: "3",
@@ -51,7 +51,7 @@ mongoose
 //     details:
 //       "A beautifully branded and fully operational webstore with design strategy and key features to increase sales, cart size, repeat purchases, life time value, and referrals. Give your brand an engaging, fast, and responsive shopping experience that converts and supports future expansion. ",
 //     price: 50.0,
-//     productImage: "uploads/shopify-website.png",
+//     productImage: "uploads/shopify-website.webp",
 //   },
 //   {
 //     id: "4",
@@ -59,7 +59,7 @@ mongoose
 //     details:
 //       "Lean support covering essentials with ongoing brand strategy, guidance, and on-demand project work, optimized performance and comprehensive oversight with a dedicated team, a full-service brand partner across strategy, design, and digital to support omnichannel growth.",
 //     price: 1.0,
-//     productImage: "uploads/brand-support.png",
+//     productImage: "uploads/brand-support.webp",
 //   },
 // ];
 
